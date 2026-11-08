@@ -58,7 +58,7 @@ body.home{background:linear-gradient(135deg,#e6f3ff,#fffaf4 50%,#ffeee3);min-hei
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ===== 여기를 본인 값으로 바꾸세요 (README.md 참고) ===== */
-const SUPABASE_URL="https://ofbpuntdkwopwmxvxamq.supabase.co";
+const SUPABASE_URL="https://ofbpuntdkwopwmxvxamq.supabase.co/";
 const SUPABASE_KEY="sb_publishable_drQXTx8XmEhkIrqYfrPqcw_xUMJeeFk";
 /* ======================================================== */
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY),T='docs',LS=new Set();
@@ -342,11 +342,23 @@ async function dlSong(s){
   if(bl.some(b=>b.type==='application/pdf')){let i=1;for(const b of bl)await save(s.title+'-'+(i++)+'.'+(b.type.split('/')[1]||'jpg').replace('jpeg','jpg'),b);return}
   return save(s.title+'.pdf',await mkPdf2(await Promise.all(bl.map(toJpg))))}
 
+function saveSheet(name,blob){
+  const url=URL.createObjectURL(blob),f=new File([blob],name,{type:blob.type||'application/octet-stream'}),w=document.createElement('div');
+  w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:99;padding:20px';
+  w.innerHTML=`<div style="background:var(--card);color:var(--tx);border-radius:16px;padding:22px;max-width:340px;width:100%;text-align:center"><div style="font-weight:700;margin-bottom:6px;word-break:break-all">${esc(name)}</div><div class="mu" style="margin-bottom:14px">파일이 준비됐어요. 아래 버튼을 눌러 저장하세요.</div><button class="b p" id="sv2" style="width:100%;margin-bottom:8px">📥 저장 / 공유</button><a href="${url}" download="${esc(name)}" style="display:block;color:var(--ac);margin:10px 0">링크로 저장하기</a><button class="b" id="cl2" style="width:100%">닫기</button></div>`;
+  document.body.appendChild(w);
+  const close=()=>{w.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)};
+  $('#cl2').onclick=close;
+  $('#sv2').onclick=async()=>{try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});close();return}}catch(e){if(e&&e.name==='AbortError')return}const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}}
 async function save(filename,data){
-  if(!dl){alert('이 화면에서는 다운로드를 쓸 수 없어요.');return}
-  try{await dl.save({filename:filename.split('/').join('-'),data})}catch(e){if(e&&e.code!=='declined')alert('다운로드 실패: '+(e.message||e.code))}}
+  if(/KAKAOTALK/i.test(navigator.userAgent)){alert('카카오톡 안에서는 다운로드가 안 돼요. 화면 위쪽의 「다른 브라우저로 열기」나 오른쪽 아래 ⋮ 메뉴에서 Chrome·Safari로 열어주세요.');return}
+  const name=filename.split('/').join('-'),blob=data instanceof Blob?data:new Blob([data],{type:'text/plain;charset=utf-8'});
+  const mob=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/i.test(navigator.platform));
+  if(mob||!dl)return saveSheet(name,blob);
+  try{await dl.save({filename:name,data:blob})}catch(e){if(e&&e.code!=='declined')alert('다운로드 실패: '+(e.message||e.code))}}
 const R=['songs','word','pray'];
 function nav(x){location.hash=x;site=R.includes(x)?x:'home';view=null;wv=null;draw()}
 function go(){const h=location.hash.slice(1);site=R.includes(h)?h:'home';view=null;wv=null;draw()}
+if(/KAKAOTALK/i.test(navigator.userAgent)){const b=document.createElement('div');b.style.cssText='background:#fff3cd;color:#664d03;padding:10px 14px;font-size:13px;text-align:center';b.innerHTML='카카오톡 안에서는 악보 다운로드가 안 돼요. <button id="xb" style="margin-left:6px;border:1px solid #664d03;background:none;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">다른 브라우저로 열기</button>';document.body.prepend(b);b.querySelector('#xb').onclick=()=>{location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href)}}
 addEventListener('hashchange',go);$('#hm').onclick=()=>nav('home');go();init();
 </script></body></html>
