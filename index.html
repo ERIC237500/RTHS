@@ -58,8 +58,8 @@ body.home{background:linear-gradient(135deg,#e6f3ff,#fffaf4 50%,#ffeee3);min-hei
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ===== 여기를 본인 값으로 바꾸세요 (README.md 참고) ===== */
-const SUPABASE_URL="https://ofbpuntdkwopwmxvxamq.supabase.co/";
-const SUPABASE_KEY="sb_publishable_drQXTx8XmEhkIrqYfrPqcw_xUMJeeFk";
+const SUPABASE_URL="https://여기에.supabase.co";
+const SUPABASE_KEY="여기에 anon public key";
 /* ======================================================== */
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY),T='docs',LS=new Set();
 let MY;try{MY=localStorage.getItem('uid');if(!MY){MY='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem('uid',MY)}}catch(e){MY='u'+Math.random().toString(36).slice(2,10)}
@@ -186,7 +186,7 @@ function setPage(v){
   v.innerHTML=`<div class="row"><select id="ss" style="flex:1"><option value="">＋ 새 콘티</option>${sorted(sets).map(x=>`<option value="${x.id}" ${x.id===cur.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
   <div class="row"><input id="nm" placeholder="콘티 이름 (예: 주일예배)" value="${esc(cur.name)}" style="flex:1;min-width:140px"><input id="dt" type="date" value="${esc(cur.date||'')}" style="width:auto"></div>
   <div id="it"></div><p class="mu" id="em" ${cur.items.length?'hidden':''}>‘찬양 목록’에서 [+ 콘티]를 눌러 곡을 담아주세요.</p>
-  <div class="row"><button class="b p" id="sv">콘티 저장</button><button class="b" id="dn">전체 다운로드</button><button class="b" id="pdf">PDF</button><button class="b" id="nw">비우기</button><span class="mu" id="m"></span></div>`;
+  <div class="row"><button class="b p" id="sv">콘티 저장</button><button class="b" id="img">이미지</button><button class="b" id="pdf">PDF</button><button class="b" id="nw">비우기</button><span class="mu" id="m"></span></div>`;
   const paint=()=>{$('#it').innerHTML=cur.items.map((it,i)=>{const s=song(it.id);return s?`<div class="card"><b style="width:22px">${i+1}</b><div style="flex:1;min-width:0"><div class="t" data-o="${i}"><b>${esc(s.title)}</b></div><input data-m="${i}" placeholder="메모 (예: 간주 2번, 후렴 반복)" value="${esc(it.memo||'')}" style="margin-top:4px;font-size:13px;padding:4px 8px"></div><select data-k="${i}" style="width:72px">${KEYS.map(k=>`<option ${k===it.key?'selected':''}>${k}</option>`).join('')}</select><button class="b s" data-u="${i}">↑</button><button class="b s" data-d="${i}">↓</button><button class="b s" data-x="${i}">✕</button></div>`:''}).join('');
     const q=(a,f)=>$('#it').querySelectorAll(`[${a}]`).forEach(e=>{const i=+e.getAttribute(a);if(a==='data-k')e.onchange=()=>{cur.items[i].key=e.value};else e.onclick=()=>f(i)});
     q('data-u',i=>{if(i>0){[cur.items[i-1],cur.items[i]]=[cur.items[i],cur.items[i-1]];paint()}});
@@ -195,14 +195,14 @@ function setPage(v){
     q('data-o',i=>{view={kind:'song',id:cur.items[i].id,n:semis(song(cur.items[i].id).key||'C',cur.items[i].key)};draw()})};
   paint();
   $('#nm').oninput=e=>cur.name=e.target.value;$('#dt').oninput=e=>cur.date=e.target.value;
-  $('#pdf').onclick=()=>{const l=cur.items.map(it=>({s:song(it.id),key:it.key,memo:it.memo})).filter(x=>x.s);if(!l.length){$('#m').textContent='담긴 곡이 없어요';return}pdfOf(l,cur.name||'콘티',(cur.name||'')+' '+(cur.date||''))};
-  $('#ss').onchange=e=>{const x=sets.find(z=>z.id===e.target.value);cur=x?{id:x.id,name:x.name,date:x.date||'',items:(x.items||[]).map(i=>({...i}))}:{id:null,name:'',items:[]};draw()};
+    $('#ss').onchange=e=>{const x=sets.find(z=>z.id===e.target.value);cur=x?{id:x.id,name:x.name,date:x.date||'',items:(x.items||[]).map(i=>({...i}))}:{id:null,name:'',items:[]};draw()};
   $('#nw').onclick=()=>{cur={id:null,name:'',items:[]};draw()};
   $('#sv').onclick=async()=>{if(!cur.name.trim()){$('#m').textContent='이름을 입력해주세요';return}
     try{const id=cur.id||'l'+Date.now().toString(36);await db.collection('setlists').doc(id).set({name:cur.name.trim(),date:cur.date||'',items:cur.items,ts:Date.now()});cur.id=id;$('#m').textContent='저장됨 ✓'}catch(e){$('#m').textContent='저장 실패: '+(e.message||e.code)}};
-  $('#dn').onclick=()=>{if(!cur.items.length){$('#m').textContent='담긴 곡이 없어요';return}
-    const out=cur.items.map((it,i)=>{const s=song(it.id);if(!s)return '';const to=it.key,flat=flatKeys.includes(to);return `${i+1}. ${s.title} (Key ${to})${it.memo?' / 메모: '+it.memo:''}\n\n${toText(s.body||'',semis(s.key||'C',to),flat)}`}).join('\n\n==============================\n\n');
-    save(`${cur.name||'콘티'}.txt`,`${cur.name||'콘티'}\n${cur.items.map((it,i)=>`${i+1}. ${song(it.id)?.title||''} (${it.key})`).join('\n')}\n\n==============================\n\n${out}`)}}
+  const listOf=()=>cur.items.map(it=>({s:song(it.id),key:it.key,memo:it.memo})).filter(x=>x.s);
+  const run=async(b,fn)=>{const l=listOf();if(!l.length){$('#m').textContent='담긴 곡이 없어요';return}const o=b.textContent;b.textContent='만드는 중…';b.disabled=true;$('#m').textContent='';try{await fn(l)}catch(x){$('#m').textContent='실패: '+(x.message||x)}b.textContent=o;b.disabled=false};
+  $('#img').onclick=e=>run(e.currentTarget,l=>setImgs(l,cur.name||'콘티'));
+  $('#pdf').onclick=e=>run(e.currentTarget,l=>setPdf(l,cur.name||'콘티'));}
 
 function home(v){v.innerHTML=`<p class="mu" style="margin-top:0">들어갈 곳을 선택하세요</p><div class="hg"><div class="hc" data-g="songs"><span>🎵</span><b>WORSHIP of REMNANT</b><small>악보 올리기 · 코드 확인 · 콘티 만들고 한번에 다운로드</small></div><div class="hc" data-g="word"><span>📖</span><b>MESSAGE of REMNANT</b><small>이번 주 붙잡은 말씀과 묵상을 함께 나눠요</small></div><div class="hc" data-g="pray"><span>🙏</span><b>PRAISE of REMNANT</b><small>기도제목과 기도문을 나누고 함께 기도해요</small></div></div>`;v.querySelectorAll('[data-g]').forEach(e=>e.onclick=()=>nav(e.dataset.g))}
 
@@ -350,6 +350,29 @@ function saveSheet(name,blob){
   const close=()=>{w.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)};
   $('#cl2').onclick=close;
   $('#sv2').onclick=async()=>{try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});close();return}}catch(e){if(e&&e.name==='AbortError')return}const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}}
+async function songBlobs(it){
+  const s=it.s,ids=s.imgs||[],out=[];
+  if(ids.length){for(const id of ids){const u=typeof getPhoto==='function'?await getPhoto(id):'/_blob/'+id,b=await(await fetch(u)).blob();if(b.type==='application/pdf')out.push(...await pdfBlobs(b));else out.push(b)}}
+  else{const{pages}=layout([it],'');for(const p of pages)out.push(await new Promise(r=>p.toBlob(r,'image/png')))}
+  return out}
+async function pdfBlobs(b){
+  if(typeof pdfjs!=='function')throw new Error('PDF 첨부는 지원하지 않아요');
+  const lib=await pdfjs(),d=await lib.getDocument({data:new Uint8Array(await b.arrayBuffer())}).promise,o=[];
+  for(let i=1;i<=d.numPages;i++){const pg=await d.getPage(i),vp=pg.getViewport({scale:1.6}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:g,viewport:vp}).promise;o.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.9)))}
+  return o}
+async function setPdf(list,name){const bl=[];for(const it of list)bl.push(...await songBlobs(it));const pg=[];for(const b of bl)pg.push(await toJpg(b));await save(name+'.pdf',await mkPdf2(pg))}
+async function setImgs(list,name){const files=[];let n=1;for(const it of list){const bl=await songBlobs(it);bl.forEach((b,i)=>{const ext=(b.type.split('/')[1]||'jpg').replace('jpeg','jpg');files.push({name:String(n).padStart(2,'0')+'_'+it.s.title.replace(/[^0-9A-Za-z가-힣 ._-]/g,'')+(bl.length>1?'_'+(i+1):'')+'.'+ext,blob:b})});n++}await save(name+'.zip',await mkZip(files))}
+function crc32(u){let t=crc32.t;if(!t){t=crc32.t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}}let r=0xFFFFFFFF;for(let i=0;i<u.length;i++)r=t[(r^u[i])&255]^(r>>>8);return(r^0xFFFFFFFF)>>>0}
+async function mkZip(files){
+  const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  for(const f of files){const d=new Uint8Array(await f.blob.arrayBuffer()),nm=enc.encode(f.name),crc=crc32(d);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);
+    parts.push(h,nm,d);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cen.push(c,nm);off+=30+nm.length+d.length}
+  let cl=0;cen.forEach(x=>cl+=x.byteLength);
+  const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cl,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,e],{type:'application/zip'})}
 async function save(filename,data){
   if(/KAKAOTALK/i.test(navigator.userAgent)){alert('카카오톡 안에서는 다운로드가 안 돼요. 화면 위쪽의 「다른 브라우저로 열기」나 오른쪽 아래 ⋮ 메뉴에서 Chrome·Safari로 열어주세요.');return}
   const name=filename.split('/').join('-'),blob=data instanceof Blob?data:new Blob([data],{type:'text/plain;charset=utf-8'});
