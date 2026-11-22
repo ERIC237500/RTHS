@@ -58,8 +58,8 @@ body.home{background:linear-gradient(135deg,#e6f3ff,#fffaf4 50%,#ffeee3);min-hei
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ===== 여기를 본인 값으로 바꾸세요 (README.md 참고) ===== */
-const SUPABASE_URL="https://여기에.supabase.co";
-const SUPABASE_KEY="여기에 anon public key";
+const SUPABASE_URL="https://ofbpuntdkwopwmxvxamq.supabase.co";
+const SUPABASE_KEY="sb_publishable_drQXTx8XmEhkIrqYfrPqcw_xUMJeeFk";
 /* ======================================================== */
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY),T='docs',LS=new Set();
 let MY;try{MY=localStorage.getItem('uid');if(!MY){MY='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem('uid',MY)}}catch(e){MY='u'+Math.random().toString(36).slice(2,10)}
